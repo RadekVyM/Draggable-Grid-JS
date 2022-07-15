@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./draggableGrid.css">
+    <title>Document</title>
+
+    <style>
+        div.draggable-grid>ul>li>div {
+            display: flex;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            justify-content: stretch;
+            align-items: stretch;
+        }
+
+        div.draggable-grid>ul>li * {
+            box-sizing: border-box;
+        }
+
+        div.draggable-grid>ul>li>div>div {
+            position: relative;
+            width: 100%;
+        }
+
+        body {
+            height: 100vh;
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        div.center-point {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            top: calc(50vh - 5px);
+            left: calc(50vw - 5px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="draggable-grid" data-span="5" data-orientation="horizontal" data-cell-size-ratio="3/4"
+        data-max-cell-size="0.5 0.5" draggable="false">
+        <ul>
+            <li>
+                <div>
+                    <div style="background-color: cadetblue;">
+                        <p onclick="console.log('Paragraph was clicked!')">Hello Man!</p>
+                        <button onclick="console.log('Button was clicked!')">Click me!</button>
+                        <a href="#">I am a link</a>
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: mediumspringgreen;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: brown;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: crimson;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: darkorange;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: goldenrod;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: lightcoral;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: darkslategray;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: royalblue;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: cadetblue;">
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: mediumspringgreen;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: brown;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: crimson;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: darkorange;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: goldenrod;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: lightcoral;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: darkslategray;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: royalblue;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: cadetblue;">
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: mediumspringgreen;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: brown;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: crimson;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: darkorange;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: goldenrod;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: lightcoral;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: darkslategray;"></div>
+                </div>
+            </li>
+            <li>
+                <div>
+                    <div style="background-color: royalblue;"></div>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="center-point"></div>
+
+    <script src="./DraggableGrid.js"></script>
+</body>
+
+</html>
