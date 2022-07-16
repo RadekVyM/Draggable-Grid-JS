@@ -102,7 +102,7 @@ class DraggableGrid {
         this._updateListItems();
         this._arrangeItems();
         this._updateVisibilityOfItems();
-        this._updateItemsScale();
+        this._updateItemsTransition();
 
         this._changeCurrentItem(this.listItems[0]);
 
@@ -173,26 +173,7 @@ class DraggableGrid {
             const vectorX = currentPosition.left - currentCenterItemPosition.left;
             const vectorY = currentPosition.top - currentCenterItemPosition.top;
 
-            this._scaledItems = [];
-
-            this._scaledItems.push(this.currentCenterItem);
-
-            if (vectorX > 0) {
-                this._scaledItems.push(this._getLeftNeighbor(this.currentCenterItem));
-            }
-            else {
-                this._scaledItems.push(this._getRightNeighbor(this.currentCenterItem));
-            }
-            if (vectorY > 0) {
-                for (let i = 0; i < 2; i++) {
-                    this._scaledItems.push(this._getTopNeighbor(this._scaledItems[i]));
-                }
-            }
-            else {
-                for (let i = 0; i < 2; i++) {
-                    this._scaledItems.push(this._getBottomNeighbor(this._scaledItems[i]));
-                }
-            }
+            this._updateScaledItems(this.currentCenterItem, vectorX, vectorY);
 
             for (const item of this._scaledItems) {
                 const itemPosition = this._getListPositionForItem(item);
@@ -201,79 +182,23 @@ class DraggableGrid {
                 const vectorLength = this._getVectorLength(itemVectorX, itemVectorY);
                 const sideVectorLength = this._getToItemSideVectorLength(itemVectorX, itemVectorY);
 
-                this._updateScale(item, this._getScaleFromVectors(vectorLength, sideVectorLength));
+                this._updateItemTransition(item, this._getTransitionValueFromVectors(vectorLength, sideVectorLength));
             }
         }
-    }
-
-    _getScaleFromVectors(vectorLength, sideVectorLength) {
-        return Math.abs(Math.min(vectorLength / sideVectorLength, 1) - 1);
-    }
-
-    _getToItemSideVectorLength(vectorX, vectorY) {
-        const cellSize = this._cellSize;
-
-        //const height = cellSize.height / 2;
-        //const width = cellSize.width / 2;
-
-        const height = cellSize.height * 0.8;
-        const width = cellSize.width * 0.8;
-
-        const normalizedVectorY = vectorY / Math.abs(vectorX / width);
-
-        const verticalVectorIntersection = Math.abs(normalizedVectorY) > height;
-
-        let sideVectorX;
-        let sideVectorY;
-
-        if (verticalVectorIntersection) {
-            const scale = Math.abs(vectorY / height);
-
-            sideVectorX = vectorX / scale;
-            sideVectorY = height * (vectorY < 0 ? -1 : 1);
-        }
-        else {
-            const scale = Math.abs(vectorX / width);
-
-            sideVectorX = width * (vectorX < 0 ? -1 : 1);
-            sideVectorY = vectorY / scale;
-        }
-
-        return this._getVectorLength(sideVectorX, sideVectorY);
     }
 
     _onChildListChanged(mutation) {
         this._updateListItems();
         this._updateListSize();
         this._arrangeItems();
-        this._updateItemsScale();
+        this._updateItemsTransition();
     }
 
     _onElementResized(e) {
         this._updateListSize();
         this._arrangeItems();
         this._moveListToItem(this.currentCenterItem);
-        this._updateItemsScale();
-    }
-
-    _getVectorLength(x, y) {
-        return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-    }
-
-    _updateScale(listItem, value) {
-        if (!listItem)
-            return;
-
-        const minScale = 0.9;
-
-        listItem.style.transform = `scale(${minScale + ((1 - minScale) * value)})`;
-    }
-
-    _updateItemsScale() {
-        for (const listItem of this.listItems) {
-            this._updateScale(listItem, 0);
-        }
-        this._updateScale(this.currentCenterItem, 1);
+        this._updateItemsTransition();
     }
 
     _arrangeItems() {
@@ -295,29 +220,24 @@ class DraggableGrid {
 
     _changeCurrentItem(newCurrentItem, animated = false) {
         if (animated) {
-            // TODO: Animate scale
             const currentPosition = this._getCurrentListPosition();
             const subAnimations = [];
 
             for (const item of this._scaledItems) {
-                const itemPosition = this._getListPositionForItem(item);
-                const itemVectorX = currentPosition.left - itemPosition.left;
-                const itemVectorY = currentPosition.top - itemPosition.top;
-                const vectorLength = this._getVectorLength(itemVectorX, itemVectorY);
-                const sideVectorLength = this._getToItemSideVectorLength(itemVectorX, itemVectorY);
-                const currentVectorScale = this._getScaleFromVectors(vectorLength, sideVectorLength);
+                const currentVectorScale = this._getTransitionValueFromPositions(currentPosition, this._getListPositionForItem(item));
 
-                if (item === newCurrentItem) {
+                if (item !== newCurrentItem) {
                     subAnimations.push(v => {
-                        this._updateScale(item, currentVectorScale + ((1 - currentVectorScale) * v));
-                    });
-                }
-                else {
-                    subAnimations.push(v => {
-                        this._updateScale(item, currentVectorScale - (currentVectorScale * v));
+                        this._updateItemTransition(item, currentVectorScale - (currentVectorScale * v));
                     });
                 }
             }
+
+            const currentVectorScale = this._getTransitionValueFromPositions(currentPosition, this._getListPositionForItem(newCurrentItem));
+
+            subAnimations.push(v => {
+                this._updateItemTransition(newCurrentItem, currentVectorScale + ((1 - currentVectorScale) * v));
+            });
 
             const scaleAnimation = new DGAnimation(0, 1, v => {
                 for (const subAnimation of subAnimations)
@@ -330,8 +250,8 @@ class DraggableGrid {
             scaleAnimation.startAnimation(125);
         }
         else {
-            this._updateScale(this.currentCenterItem, 0);
-            this._updateScale(newCurrentItem, 1);
+            this._updateItemTransition(this.currentCenterItem, 0);
+            this._updateItemTransition(newCurrentItem, 1);
             this.currentCenterItem = newCurrentItem
             this._moveListToItem(newCurrentItem);
         }
@@ -407,6 +327,54 @@ class DraggableGrid {
         this.list.style.height = `${height}px`;
     }
 
+    _updateItemTransition(listItem, value) {
+        if (!listItem)
+            return;
+
+        const minScale = 0.9;
+
+        listItem.style.transform = `scale(${minScale + ((1 - minScale) * value)})`;
+        listItem.style.opacity = `${0.5 + ((1 - 0.5) * value)}`;
+    }
+
+    _updateItemsTransition() {
+        for (const listItem of this.listItems) {
+            this._updateItemTransition(listItem, 0);
+        }
+        this._updateItemTransition(this.currentCenterItem, 1);
+    }
+
+    _updateScaledItems(listItem, vectorX, vectorY) {
+        this._scaledItems = [];
+
+        const listItemIndex = this.listItems.indexOf(listItem);
+        const scaledItemsIndexes = [];
+
+        scaledItemsIndexes.push(listItemIndex);
+
+        if (vectorX > 0) {
+            scaledItemsIndexes.push(this._getLeftNeighborIndex(listItemIndex));
+        }
+        else {
+            scaledItemsIndexes.push(this._getRightNeighborIndex(listItemIndex));
+        }
+        if (vectorY > 0) {
+            for (let i = 0; i < 2; i++) {
+                scaledItemsIndexes.push(this._getTopNeighborIndex(scaledItemsIndexes[i]));
+            }
+        }
+        else {
+            for (let i = 0; i < 2; i++) {
+                scaledItemsIndexes.push(this._getBottomNeighborIndex(scaledItemsIndexes[i]));
+            }
+        }
+
+        for (const index of scaledItemsIndexes) {
+            if (index >= 0 && index < this.listItems.length)
+                this._scaledItems.push(this.listItems[index]);
+        }
+    }
+
     _getItemForListPosition(left, top) {
         const cellSize = this._cellSize;
 
@@ -444,19 +412,43 @@ class DraggableGrid {
     }
 
     _getTopNeighbor(listItem) {
-        return this._getItemOnPosition(this._getRowOfItem(listItem) - 1, this._getColumnOfItem(listItem));
+        const itemIndex = this.listItems.indexOf(listItem);
+        const neighborIndex = this._getTopNeighborIndex(itemIndex);
+        return neighborIndex >= 0 && neighborIndex < this.listItems.length ? this.listItems[neighborIndex] : null;
     }
 
     _getBottomNeighbor(listItem) {
-        return this._getItemOnPosition(this._getRowOfItem(listItem) + 1, this._getColumnOfItem(listItem));
+        const itemIndex = this.listItems.indexOf(listItem);
+        const neighborIndex = this._getBottomNeighborIndex(itemIndex);
+        return neighborIndex >= 0 && neighborIndex < this.listItems.length ? this.listItems[neighborIndex] : null;
     }
 
     _getLeftNeighbor(listItem) {
-        return this._getItemOnPosition(this._getRowOfItem(listItem), this._getColumnOfItem(listItem) - 1);
+        const itemIndex = this.listItems.indexOf(listItem);
+        const neighborIndex = this._getLeftNeighborIndex(itemIndex);
+        return neighborIndex >= 0 && neighborIndex < this.listItems.length ? this.listItems[neighborIndex] : null;
     }
 
     _getRightNeighbor(listItem) {
-        return this._getItemOnPosition(this._getRowOfItem(listItem), this._getColumnOfItem(listItem) + 1);
+        const itemIndex = this.listItems.indexOf(listItem);
+        const neighborIndex = this._getRightNeighborIndex(itemIndex);
+        return neighborIndex >= 0 && neighborIndex < this.listItems.length ? this.listItems[neighborIndex] : null;
+    }
+
+    _getTopNeighborIndex(listItemIndex) {
+        return this._getIndexOnPosition(this._getColumnOfIndex(listItemIndex), this._getRowOfIndex(listItemIndex) - 1);
+    }
+
+    _getBottomNeighborIndex(listItemIndex) {
+        return this._getIndexOnPosition(this._getColumnOfIndex(listItemIndex), this._getRowOfIndex(listItemIndex) + 1);
+    }
+
+    _getLeftNeighborIndex(listItemIndex) {
+        return this._getIndexOnPosition(this._getColumnOfIndex(listItemIndex) - 1, this._getRowOfIndex(listItemIndex));
+    }
+
+    _getRightNeighborIndex(listItemIndex) {
+        return this._getIndexOnPosition(this._getColumnOfIndex(listItemIndex) + 1, this._getRowOfIndex(listItemIndex));
     }
 
     _getColumnOfItem(listItem) {
@@ -509,6 +501,54 @@ class DraggableGrid {
         return index;
     }
 
+    _getTransitionValueFromPositions(currentPosition, targetPosition) {
+        const vectorX = currentPosition.left - targetPosition.left;
+        const vectorY = currentPosition.top - targetPosition.top;
+        const vectorLength = this._getVectorLength(vectorX, vectorY);
+        const sideVectorLength = this._getToItemSideVectorLength(vectorX, vectorY);
+        return this._getTransitionValueFromVectors(vectorLength, sideVectorLength);
+    }
+
+    _getTransitionValueFromVectors(vectorLength, sideVectorLength) {
+        return Math.abs(Math.min(vectorLength / sideVectorLength, 1) - 1);
+    }
+
+    _getToItemSideVectorLength(vectorX, vectorY) {
+        const cellSize = this._cellSize;
+
+        //const height = cellSize.height / 2;
+        //const width = cellSize.width / 2;
+
+        const height = cellSize.height * 0.8;
+        const width = cellSize.width * 0.8;
+
+        const normalizedVectorY = vectorY / Math.abs(vectorX / width);
+
+        const verticalVectorIntersection = Math.abs(normalizedVectorY) > height;
+
+        let sideVectorX;
+        let sideVectorY;
+
+        if (verticalVectorIntersection) {
+            const scale = Math.abs(vectorY / height);
+
+            sideVectorX = vectorX / scale;
+            sideVectorY = height * (vectorY < 0 ? -1 : 1);
+        }
+        else {
+            const scale = Math.abs(vectorX / width);
+
+            sideVectorX = width * (vectorX < 0 ? -1 : 1);
+            sideVectorY = vectorY / scale;
+        }
+
+        return this._getVectorLength(sideVectorX, sideVectorY);
+    }
+
+    _getVectorLength(x, y) {
+        return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+    }
+
     _parsePixelsString(str) {
         return str.substring(0, str.length - 3);
     }
@@ -549,16 +589,6 @@ class DGAnimation {
             if (onDone)
                 onDone();
         }
-    }
-}
-
-class DGListItemRelativePosition {
-    constructor(item, top, right, bottom, left) {
-        this.item = item;
-        this.top = top;
-        this.right = right;
-        this.bottom = bottom;
-        this.left = left;
     }
 }
 
