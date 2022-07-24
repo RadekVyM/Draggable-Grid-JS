@@ -1,14 +1,18 @@
 
 window.addEventListener("load", () => {
-    const draggableGridUls = document.body.querySelectorAll("div.draggable-grid");
-    const draggableGrids = [];
+    const draggableGridDivs = document.body.querySelectorAll("div.draggable-grid");
 
-    for (const ul of draggableGridUls) {
-        draggableGrids.push(new DraggableGrid(ul));
+    for (const div of draggableGridDivs) {
+        DraggableGrid.initDraggableGridFor(div);
     }
-});
 
-// TODO: Observe changes of content of the ul element and update state of the control
+    const secondGrid = DraggableGrid.getDraggableGridFor(document.body.querySelectorAll("div.draggable-grid")[1]);
+
+    secondGrid.configuration.changingItemTransition = (li, v) => {
+        li.style.transform = `rotate(${(1 - v) * 30}deg)`;
+        //li.style.opacity = (v + 1) / 2;
+    };
+});
 
 const DG_ORIENTATION_HORIZONTAL = "horizontal";
 const DG_ORIENTATION_VERTICAL = "vertical";
@@ -16,9 +20,32 @@ const DG_ORIENTATION_VERTICAL = "vertical";
 class DraggableGrid {
     // TODO: Maybe loop, fake side items, configuration (transition, animation, animation length, velocity...), clean up code
 
+    static allDraggableGrids = [];
+
+    static getDraggableGridFor(element) {
+        for (const grid of this.allDraggableGrids) {
+            if (grid.element === element) {
+                return grid;
+            }
+        }
+        return null;
+    }
+
+    static initDraggableGridFor(element) {
+        const foundGrid = DraggableGrid.allDraggableGrids.find(g => g.element === element)
+        if (foundGrid) {
+            return foundGrid;
+        }
+
+        const newGrid = new DraggableGrid(element);
+        DraggableGrid.allDraggableGrids.push(newGrid);
+
+        return newGrid;
+    }
+
     get _cellSize() {
-        const width = this.cellPercSize.width * this._element.clientWidth;
-        const height = this.cellPercSize.height * this._element.clientHeight;
+        const width = this.cellPercSize.width * this.element.clientWidth;
+        const height = this.cellPercSize.height * this.element.clientHeight;
 
         const cellRatio = this.cellSizeRatio;
 
@@ -34,25 +61,25 @@ class DraggableGrid {
     }
 
     get cellSizeRatio() {
-        if (!this._element.dataset.cellSizeRatio)
+        if (!this.element.dataset.cellSizeRatio)
             return new DGSize(1, 1);
 
-        const ratioStr = this._element.dataset.cellSizeRatio.replace(" ", "").split("/");
+        const ratioStr = this.element.dataset.cellSizeRatio.replace(" ", "").split("/");
         return new DGSize(parseFloat(ratioStr[0]), parseFloat(ratioStr[1]));
     }
 
     get cellPercSize() {
-        if (!this._element.dataset.maxCellSize)
+        if (!this.element.dataset.maxCellSize)
             return new DGSize(0.5, 0.5);
 
-        const maxCellSize = this._element.dataset.maxCellSize.split(" ").filter(v => v !== "");
+        const maxCellSize = this.element.dataset.maxCellSize.split(" ").filter(v => v !== "");
         return new DGSize(parseFloat(maxCellSize[0]), parseFloat(maxCellSize[1]));
     }
 
     get span() {
-        if (!this._element.dataset.span)
+        if (!this.element.dataset.span)
             return 1;
-        return Math.max(parseInt(this._element.dataset.span) || 1, 1);
+        return Math.max(parseInt(this.element.dataset.span) || 1, 1);
     }
 
     get otherSpan() {
@@ -60,9 +87,9 @@ class DraggableGrid {
     }
 
     get orientation() {
-        if (!this._element.dataset.orientation)
+        if (!this.element.dataset.orientation)
             return DG_ORIENTATION_HORIZONTAL;
-        return this._element.dataset.orientation;
+        return this.element.dataset.orientation;
     }
 
     get isHorizontalOrientation() {
@@ -75,7 +102,7 @@ class DraggableGrid {
 
 
     constructor(element) {
-        this._element = element;
+        this.element = element;
         this._list = element.querySelector(":scope > ul");
         this._listItems = []
         this._currentCenterItem = null;
@@ -94,12 +121,7 @@ class DraggableGrid {
         this._transitionedItems = [];
         this._transitionAnimation = null;
         this._moveListToItemAnimation = null;
-        this.configuration = {
-            changingItemTransition: this._defaultItemTransition,
-            changingItemTransitionLength: 200,
-            changingItemTransitionEasing: DGEasings.easeOutQuad,
-            minSwipeVelocity: 1500
-        };
+        this.configuration = this._createDefaultConfiguration();
 
         this._updateListItems();
         this._arrangeItems();
@@ -119,10 +141,10 @@ class DraggableGrid {
             }
         });
 
-        this.resizeObserver.observe(this._element);
-        this.mutationObserver.observe(this._element, mutationObserverConfig);
+        this.resizeObserver.observe(this.element);
+        this.mutationObserver.observe(this.element, mutationObserverConfig);
 
-        this._element.addEventListener("pointerdown", e => this._onPointerDown(e));
+        this.element.addEventListener("pointerdown", e => this._onPointerDown(e));
         window.addEventListener("pointermove", e => this._onPointerMove(e));
         window.addEventListener("pointercancel", e => this._onPointerUp(e));
         window.addEventListener("pointerup", e => this._onPointerUp(e));
@@ -178,7 +200,7 @@ class DraggableGrid {
                     }
 
                     if (velocity >= this.configuration.minSwipeVelocity) {
-                        newItem = this._getItemForListPosition(this._startDraggingListX + scaledVector.x, this._startDraggingListY + scaledVector.y);
+                        newItem = this._getItemForListPosition(this._startDraggingListX + scaledVector.x - 1, this._startDraggingListY + scaledVector.y - 1);
                     }
                 }
             }
@@ -198,7 +220,7 @@ class DraggableGrid {
             const currentPosition = this._getCurrentListPosition();
             const vector = this._getVectorFromCurrentCenterItem();
 
-            this._updateScaledItems(this._currentCenterItem, vector.x, vector.y);
+            this._updateTransitionenItems(this._currentCenterItem, vector.x, vector.y);
 
             for (const item of this._transitionedItems) {
                 const itemPosition = this._getListPositionForItem(item);
@@ -213,6 +235,7 @@ class DraggableGrid {
     }
 
     _onChildListChanged(mutation) {
+        this._resetListItemsStyle();
         this._updateListItems();
         this._updateListSize();
         this._arrangeItems();
@@ -220,10 +243,17 @@ class DraggableGrid {
     }
 
     _onElementResized(e) {
+        this._resetListItemsStyle();
         this._updateListSize();
         this._arrangeItems();
         this._moveListToItem(this._currentCenterItem);
         this._updateItemsTransition();
+    }
+
+    _resetListItemsStyle() {
+        for (const item of this._listItems) {
+            item.setAttribute("style", "");
+        }
     }
 
     _arrangeItems() {
@@ -328,8 +358,8 @@ class DraggableGrid {
     _updateVisibilityOfItems(numberOfItemsToSide = 1) {
         const cellSize = this._cellSize;
 
-        const verticalCount = Math.floor((Math.floor(this._element.clientHeight / cellSize.height) - 1) / 2);
-        const horizontalCount = Math.floor((Math.floor(this._element.clientWidth / cellSize.width) - 1) / 2);
+        const verticalCount = Math.ceil((Math.floor(this.element.clientHeight / cellSize.height) - 1) / 2);
+        const horizontalCount = Math.ceil((Math.floor(this.element.clientWidth / cellSize.width) - 1) / 2);
 
         for (let i = 0; i < this._listItems.length; i++) {
             const listItem = this._listItems[i];
@@ -356,16 +386,6 @@ class DraggableGrid {
         this._list.style.height = `${height}px`;
     }
 
-    _defaultItemTransition(listItem, value) {
-        if (!listItem)
-            return;
-
-        const minScale = 0.9;
-
-        listItem.style.transform = `scale(${minScale + ((1 - minScale) * value)})`;
-        listItem.style.opacity = `${0.5 + ((1 - 0.5) * value)}`;
-    }
-
     _updateItemsTransition() {
         for (const listItem of this._listItems) {
             this.configuration.changingItemTransition(listItem, 0);
@@ -373,7 +393,7 @@ class DraggableGrid {
         this.configuration.changingItemTransition(this._currentCenterItem, 1);
     }
 
-    _updateScaledItems(listItem, vectorX, vectorY) {
+    _updateTransitionenItems(listItem, vectorX, vectorY) {
         this._transitionedItems = [];
 
         const listItemIndex = this._listItems.indexOf(listItem);
@@ -404,11 +424,43 @@ class DraggableGrid {
         }
     }
 
+    _createDefaultConfiguration() {
+        const configuration = {
+            changingItemTransition: this._defaultItemTransition,
+            changingItemTransitionLength: 200,
+            changingItemTransitionEasing: DGEasings.easeOutQuad,
+            minSwipeVelocity: 1500
+        };
+
+        const configurationProxy = new Proxy(configuration, {
+            set: (target, key, value) => {
+                target[key] = value;
+
+                if (key === "changingItemTransition")
+                    this._updateItemsTransition();
+
+                return true;
+            }
+        });
+
+        return configurationProxy;
+    }
+
+    _defaultItemTransition(listItem, value) {
+        if (!listItem)
+            return;
+
+        const minScale = 0.9;
+
+        listItem.style.transform = `scale(${minScale + ((1 - minScale) * value)})`;
+        listItem.style.opacity = `${0.5 + ((1 - 0.5) * value)}`;
+    }
+
     _getItemForListPosition(left, top) {
         const cellSize = this._cellSize;
 
-        top = top - ((this._element.clientHeight - cellSize.height) / 2);
-        left = left - ((this._element.clientWidth - cellSize.width) / 2);
+        top = top - ((this.element.clientHeight - cellSize.height) / 2);
+        left = left - ((this.element.clientWidth - cellSize.width) / 2);
 
         const row = Math.max(Math.min(Math.floor(-top / cellSize.height), this.isHorizontalOrientation ? this.span - 1 : this.otherSpan - 1), 0);
         const column = Math.max(Math.min(Math.floor(-left / cellSize.width), this.isHorizontalOrientation ? this.otherSpan - 1 : this.span - 1), 0);
@@ -418,7 +470,7 @@ class DraggableGrid {
         if (itemOnPosition === null)
             return this.isHorizontalOrientation ? this._getItemOnPosition(row, column - 1) : this._getItemOnPosition(row - 1, column)
 
-        return this._getItemOnPosition(row, column);
+        return itemOnPosition;
     }
 
     _getCurrentListPosition() {
@@ -434,8 +486,8 @@ class DraggableGrid {
         const column = this._getColumnOfItem(listItem);
 
         return {
-            top: -(row * cellSize.height - (this._element.clientHeight - cellSize.height) / 2),
-            left: -(column * cellSize.width - (this._element.clientWidth - cellSize.width) / 2)
+            top: -(row * cellSize.height - (this.element.clientHeight - cellSize.height) / 2),
+            left: -(column * cellSize.width - (this.element.clientWidth - cellSize.width) / 2)
         };
     }
 
