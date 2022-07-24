@@ -13,15 +13,8 @@ window.addEventListener("load", () => {
 const DG_ORIENTATION_HORIZONTAL = "horizontal";
 const DG_ORIENTATION_VERTICAL = "vertical";
 
-class DGSize {
-    constructor(width, height) {
-        this.width = width;
-        this.height = height;
-    }
-}
-
 class DraggableGrid {
-    // TODO: Maybe loop, fake side items, configuration (transition, animation, animation length...), clean up code
+    // TODO: Maybe loop, fake side items, configuration (transition, animation, animation length, velocity...), clean up code, swipe
 
     get _cellSize() {
         const width = this.cellPercSize.width * this.element.clientWidth;
@@ -87,6 +80,7 @@ class DraggableGrid {
         this.listItems = []
         this.currentCenterItem = null;
         this.isDragging = false;
+        this.startSwipingTime = Date.now();
         this.startDraggingClientX = 0;
         this.startDraggingClientY = 0;
         this.startDraggingListX = 0;
@@ -131,6 +125,8 @@ class DraggableGrid {
     _onPointerDown(e) {
         e.preventDefault();
 
+        this.startSwipingTime = Date.now();
+
         const currentPosition = this._getListPositionForItem(this.currentCenterItem);
         const cellSize = this._cellSize;
 
@@ -154,7 +150,25 @@ class DraggableGrid {
         if (this.isDragging) {
             e.preventDefault();
             const cellSize = this._cellSize;
-            const newItem = this._getItemForListPosition(this.lastDraggingListX - (cellSize.width / 2), this.lastDraggingListY - (cellSize.height / 2));
+            let newItem = this._getItemForListPosition(this.lastDraggingListX - (cellSize.width / 2), this.lastDraggingListY - (cellSize.height / 2));
+
+            if (newItem === this.currentCenterItem) {
+                const vector = this._getVectorFromCurrentCenterItem();
+                const scaledVector = this._getScaledVector(vector.x, vector.y, cellSize.width, cellSize.height);
+                const velocity = this._getVectorLength(scaledVector.x, scaledVector.y) / ((Date.now() - this.startSwipingTime) / 1000);
+
+                if (Math.abs(scaledVector.y) < cellSize.height) {
+                    scaledVector.y = 0;
+                }
+                else {
+                    scaledVector.x = 0;
+                }
+
+                if (velocity >= 2000) {
+                    newItem = this._getItemForListPosition(this.startDraggingListX + scaledVector.x, this.startDraggingListY + scaledVector.y);
+                }
+            }
+
             this._changeCurrentItem(newItem, true);
         }
         this.isDragging = false;
@@ -167,13 +181,10 @@ class DraggableGrid {
             this.lastDraggingListY = Math.max(Math.min(this.startDraggingListY + (e.clientY - this.startDraggingClientY), this.maxDraggingListY), this.minDraggingListY);
             this._moveListToPosition(this.lastDraggingListX, this.lastDraggingListY);
 
-            const currentCenterItemPosition = this._getListPositionForItem(this.currentCenterItem);
             const currentPosition = this._getCurrentListPosition();
+            const vector = this._getVectorFromCurrentCenterItem();
 
-            const vectorX = currentPosition.left - currentCenterItemPosition.left;
-            const vectorY = currentPosition.top - currentCenterItemPosition.top;
-
-            this._updateScaledItems(this.currentCenterItem, vectorX, vectorY);
+            this._updateScaledItems(this.currentCenterItem, vector.x, vector.y);
 
             for (const item of this._scaledItems) {
                 const itemPosition = this._getListPositionForItem(item);
@@ -393,7 +404,6 @@ class DraggableGrid {
     }
 
     _getCurrentListPosition() {
-        const cellSize = this._cellSize;
         return {
             top: parseFloat(this.list.style.top.replace("px")),
             left: parseFloat(this.list.style.left.replace("px"))
@@ -519,30 +529,46 @@ class DraggableGrid {
         //const height = cellSize.height / 2;
         //const width = cellSize.width / 2;
 
-        const height = cellSize.height * 0.8;
         const width = cellSize.width * 0.8;
+        const height = cellSize.height * 0.8;
 
-        const normalizedVectorY = vectorY / Math.abs(vectorX / width);
+        const sideVector = this._getScaledVector(vectorX, vectorY, width, height);
 
-        const verticalVectorIntersection = Math.abs(normalizedVectorY) > height;
+        return this._getVectorLength(sideVector.x, sideVector.y);
+    }
 
-        let sideVectorX;
-        let sideVectorY;
+    _getScaledVector(vectorX, vectorY, maxAbsX, maxAbsY) {
+        const normalizedVectorY = vectorY / Math.abs(vectorX / maxAbsX);
+
+        const verticalVectorIntersection = Math.abs(normalizedVectorY) > maxAbsY;
+
+        let scaledVectorX;
+        let scaledVectorY;
 
         if (verticalVectorIntersection) {
-            const scale = Math.abs(vectorY / height);
+            const scale = Math.abs(vectorY / maxAbsY);
 
-            sideVectorX = vectorX / scale;
-            sideVectorY = height * (vectorY < 0 ? -1 : 1);
+            scaledVectorX = vectorX / scale;
+            scaledVectorY = maxAbsY * (vectorY < 0 ? -1 : 1);
         }
         else {
-            const scale = Math.abs(vectorX / width);
+            const scale = Math.abs(vectorX / maxAbsX);
 
-            sideVectorX = width * (vectorX < 0 ? -1 : 1);
-            sideVectorY = vectorY / scale;
+            scaledVectorX = maxAbsX * (vectorX < 0 ? -1 : 1);
+            scaledVectorY = vectorY / scale;
         }
 
-        return this._getVectorLength(sideVectorX, sideVectorY);
+        return { x: scaledVectorX, y: scaledVectorY };
+    }
+
+    _getVectorFromCurrentCenterItem() {
+        const currentCenterItemPosition = this._getListPositionForItem(this.currentCenterItem);
+        const currentPosition = this._getCurrentListPosition();
+
+        const vectorX = currentPosition.left - currentCenterItemPosition.left;
+        const vectorY = currentPosition.top - currentCenterItemPosition.top;
+
+        return { x: vectorX, y: vectorY };
     }
 
     _getVectorLength(x, y) {
@@ -589,6 +615,13 @@ class DGAnimation {
             if (onDone)
                 onDone();
         }
+    }
+}
+
+class DGSize {
+    constructor(width, height) {
+        this.width = width;
+        this.height = height;
     }
 }
 
