@@ -6,11 +6,11 @@ window.addEventListener("load", () => {
         DraggableGrid.initDraggableGridFor(div);
     }
 
+    // Just for testing
     const secondGrid = DraggableGrid.getDraggableGridFor(document.body.querySelectorAll("div.draggable-grid")[1]);
 
     secondGrid.configuration.changingItemTransition = (li, v) => {
         li.style.transform = `rotate(${(1 - v) * 30}deg)`;
-        //li.style.opacity = (v + 1) / 2;
     };
 });
 
@@ -18,7 +18,7 @@ const DG_ORIENTATION_HORIZONTAL = "horizontal";
 const DG_ORIENTATION_VERTICAL = "vertical";
 
 class DraggableGrid {
-    // TODO: Maybe loop, fake side items, configuration (transition, animation, animation length, velocity...), clean up code
+    // TODO: Maybe loop, fake side items, clean up code
 
     static allDraggableGrids = [];
 
@@ -44,10 +44,15 @@ class DraggableGrid {
     }
 
     get _cellSize() {
-        const width = this.cellPercSize.width * this.element.clientWidth;
-        const height = this.cellPercSize.height * this.element.clientHeight;
+        if (this._cellCache.cellSize) {
+            return this._cellCache.cellSize;
+        }
 
+        const cellPercSize = this.cellPercSize;
         const cellRatio = this.cellSizeRatio;
+
+        const width = cellPercSize.width * this.element.clientWidth;
+        const height = cellPercSize.height * this.element.clientHeight;
 
         let newWidth = width;
         let newHeight = width / cellRatio.width * cellRatio.height;
@@ -57,39 +62,78 @@ class DraggableGrid {
             newWidth = height / cellRatio.height * cellRatio.width;
         }
 
-        return new DGSize(newWidth, newHeight);
+        this._cellCache.cellSize = new DGSize(newWidth, newHeight);
+
+        return this._cellCache.cellSize;
     }
 
     get cellSizeRatio() {
-        if (!this.element.dataset.cellSizeRatio)
-            return new DGSize(1, 1);
+        if (this._cellCache.cellSizeRatio) {
+            return this._cellCache.cellSizeRatio;
+        }
+
+        if (!this.element.dataset.cellSizeRatio) {
+            this._cellCache.cellSizeRatio = new DGSize(1, 1);
+            return this._cellCache.cellSizeRatio;
+        }
 
         const ratioStr = this.element.dataset.cellSizeRatio.replace(" ", "").split("/");
-        return new DGSize(parseFloat(ratioStr[0]), parseFloat(ratioStr[1]));
+        this._cellCache.cellSizeRatio = new DGSize(parseFloat(ratioStr[0]), parseFloat(ratioStr[1]));
+        return this._cellCache.cellSizeRatio;
     }
 
     get cellPercSize() {
-        if (!this.element.dataset.maxCellSize)
-            return new DGSize(0.5, 0.5);
+        if (this._cellCache.cellPercSize) {
+            return this._cellCache.cellPercSize;
+        }
 
-        const maxCellSize = this.element.dataset.maxCellSize.split(" ").filter(v => v !== "");
-        return new DGSize(parseFloat(maxCellSize[0]), parseFloat(maxCellSize[1]));
+        if (!this.element.dataset.maxCellSize) {
+            this._cellCache.cellPercSize = new DGSize(0.5, 0.5);
+            return this._cellCache.cellPercSize;
+        }
+
+        //const maxCellSize = this.element.dataset.maxCellSize.split(" ").filter(v => v !== "");
+        const maxCellSize = this.element.dataset.maxCellSize.split(" ");
+        this._cellCache.cellPercSize = new DGSize(parseFloat(maxCellSize[0]), parseFloat(maxCellSize[1]));
+        return this._cellCache.cellPercSize;
     }
 
     get span() {
-        if (!this.element.dataset.span)
-            return 1;
-        return Math.max(parseInt(this.element.dataset.span) || 1, 1);
+        if (this._spanCache.span) {
+            return this._spanCache.span;
+        }
+
+        if (!this.element.dataset.span) {
+            this._spanCache.span = 1;
+            return this._spanCache.span;
+        }
+
+        this._spanCache.span = Math.max(parseInt(this.element.dataset.span) || 1, 1);
+        return this._spanCache.span;
     }
 
     get otherSpan() {
-        return Math.ceil(this._listItems.length / this.span);
+        if (this._spanCache.otherSpan) {
+            return this._spanCache.otherSpan;
+        }
+
+        this._spanCache.otherSpan = Math.ceil(this._listItems.length / this.span);
+
+        return this._spanCache.otherSpan;
     }
 
     get orientation() {
-        if (!this.element.dataset.orientation)
-            return DG_ORIENTATION_HORIZONTAL;
-        return this.element.dataset.orientation;
+        if (this._orientationCache.orientation) {
+            return this._orientationCache.orientation;
+        }
+
+        if (!this.element.dataset.orientation) {
+            this._orientationCache.orientation = DG_ORIENTATION_HORIZONTAL;
+            return this._orientationCache.orientation;
+        }
+
+        this._orientationCache.orientation = this.element.dataset.orientation;
+        return this._orientationCache.orientation;
     }
 
     get isHorizontalOrientation() {
@@ -100,11 +144,18 @@ class DraggableGrid {
         return this.orientation === DG_ORIENTATION_VERTICAL;
     }
 
+    get currentItemIndex() {
+        return this._listItems.indexOf(this._currentCenterItem);
+    }
+
+    set currentItemIndex(value) {
+        this._changeCurrentItem(value, false);
+    }
 
     constructor(element) {
         this.element = element;
         this._list = element.querySelector(":scope > ul");
-        this._listItems = []
+        this._listItems = [];
         this._currentCenterItem = null;
         this._isDragging = false;
         this._startSwipingTime = Date.now();
@@ -121,6 +172,18 @@ class DraggableGrid {
         this._transitionedItems = [];
         this._transitionAnimation = null;
         this._moveListToItemAnimation = null;
+        this._cellCache = {
+            cellPercSize: null,
+            cellSizeRatio: null,
+            cellSize: null
+        }
+        this._spanCache = {
+            span: undefined,
+            otherSpan: undefined
+        }
+        this._orientationCache = {
+            orientation: null
+        }
         this.configuration = this._createDefaultConfiguration();
 
         this._updateListItems();
@@ -184,13 +247,15 @@ class DraggableGrid {
             const cellSize = this._cellSize;
             let newItem = this._getItemForListPosition(this._lastDraggingListX - (cellSize.width / 2), this._lastDraggingListY - (cellSize.height / 2));
 
+            // Swipe
             if (newItem === this._currentCenterItem) {
                 const vector = this._getVectorFromCurrentCenterItem();
                 const minOffset = 2;
 
+                // Swipe or just a click?
                 if (!(Math.abs(vector.x) < minOffset && Math.abs(vector.y) < minOffset)) {
                     const scaledVector = this._getScaledVector(vector.x, vector.y, cellSize.width, cellSize.height);
-                    const velocity = this._getVectorLength(scaledVector.x, scaledVector.y) / ((Date.now() - this._startSwipingTime) / 1000);
+                    const velocity = this._getVectorLength(scaledVector.x, scaledVector.y) / ((Date.now() - this._startSwipingTime) / 1000); // pixels per second
 
                     if (Math.abs(scaledVector.y) < cellSize.height) {
                         scaledVector.y = 0;
@@ -243,6 +308,12 @@ class DraggableGrid {
     }
 
     _onElementResized(e) {
+        this._cellCache = {
+            cellPercSize: null,
+            cellSizeRatio: null,
+            cellSize: null
+        }
+
         this._resetListItemsStyle();
         this._updateListSize();
         this._arrangeItems();
