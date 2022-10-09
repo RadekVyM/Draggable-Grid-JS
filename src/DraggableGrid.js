@@ -1,24 +1,8 @@
-
-window.addEventListener("load", () => {
-    const draggableGridDivs = document.body.querySelectorAll("div.draggable-grid");
-
-    for (const div of draggableGridDivs) {
-        DraggableGrid.initDraggableGridFor(div);
-    }
-
-    // Just for testing
-    const secondGrid = DraggableGrid.getDraggableGridFor(document.body.querySelectorAll("div.draggable-grid")[1]);
-
-    secondGrid.configuration.changingItemTransition = (li, v) => {
-        li.style.transform = `rotate(${(1 - v) * 30}deg)`;
-    };
-});
-
 const DG_ORIENTATION_HORIZONTAL = "horizontal";
 const DG_ORIENTATION_VERTICAL = "vertical";
 
 class DraggableGrid {
-    // TODO: Maybe loop, fake side items, clean up code
+    // TODO: Maybe loop, fake side items, clean up code, keyboard control
 
     static allDraggableGrids = [];
 
@@ -43,7 +27,7 @@ class DraggableGrid {
         return newGrid;
     }
 
-    get _cellSize() {
+    get cellSize() {
         if (this._cellCache.cellSize) {
             return this._cellCache.cellSize;
         }
@@ -152,6 +136,7 @@ class DraggableGrid {
         this._changeCurrentItem(value, false);
     }
 
+
     constructor(element) {
         this.element = element;
         this._list = element.querySelector(":scope > ul");
@@ -186,6 +171,8 @@ class DraggableGrid {
         }
         this.configuration = this._createDefaultConfiguration();
 
+        this.element.setAttribute("tabindex", 0);
+
         this._updateListItems();
         this._arrangeItems();
         this._updateVisibilityOfItems();
@@ -211,9 +198,38 @@ class DraggableGrid {
         window.addEventListener("pointermove", e => this._onPointerMove(e));
         window.addEventListener("pointercancel", e => this._onPointerUp(e));
         window.addEventListener("pointerup", e => this._onPointerUp(e));
+        this.element.addEventListener("keydown", e => this._onKeyDown(e));
         //window.addEventListener("pointerleave", e => this._onPointerUp(e));
     }
 
+
+    _onKeyDown(e) {
+        console.log(e.code);
+
+        let newItem = null;
+
+        switch (e.code) {
+            case "ArrowUp":
+                newItem = this._getTopNeighbor(this._currentCenterItem);
+                break;
+            case "ArrowDown":
+                newItem = this._getBottomNeighbor(this._currentCenterItem);
+                break;
+            case "ArrowLeft":
+                newItem = this._getLeftNeighbor(this._currentCenterItem);
+                break;
+            case "ArrowRight":
+                newItem = this._getRightNeighbor(this._currentCenterItem);
+                break;
+            default:
+                return;
+        }
+
+        if (newItem)
+            this._changeCurrentItem(newItem, false);
+
+        e.preventDefault();
+    }
 
     _onPointerDown(e) {
         e.preventDefault();
@@ -221,7 +237,7 @@ class DraggableGrid {
         this._startSwipingTime = Date.now();
 
         const currentPosition = this._getListPositionForItem(this._currentCenterItem);
-        const cellSize = this._cellSize;
+        const cellSize = this.cellSize;
 
         this._isDragging = true;
         this._startDraggingClientX = e.clientX;
@@ -244,7 +260,7 @@ class DraggableGrid {
     _onPointerUp(e) {
         if (this._isDragging) {
             e.preventDefault();
-            const cellSize = this._cellSize;
+            const cellSize = this.cellSize;
             let newItem = this._getItemForListPosition(this._lastDraggingListX - (cellSize.width / 2), this._lastDraggingListY - (cellSize.height / 2));
 
             // Swipe
@@ -285,7 +301,7 @@ class DraggableGrid {
             const currentPosition = this._getCurrentListPosition();
             const vector = this._getVectorFromCurrentCenterItem();
 
-            this._updateTransitionenItems(this._currentCenterItem, vector.x, vector.y);
+            this._updateTransitionedItems(this._currentCenterItem, vector.x, vector.y);
 
             for (const item of this._transitionedItems) {
                 const itemPosition = this._getListPositionForItem(item);
@@ -328,7 +344,7 @@ class DraggableGrid {
     }
 
     _arrangeItems() {
-        const cellSize = this._cellSize;
+        const cellSize = this.cellSize;
         const top = 0;
         const bottom = top + cellSize.height;
         const left = 0;
@@ -374,7 +390,7 @@ class DraggableGrid {
                     subAnimation(v);
             });
 
-            this._currentCenterItem = newCurrentItem
+            this._currentCenterItem = newCurrentItem;
             this._animateListToItem(newCurrentItem).then(() => {
             });
             this._transitionAnimation.startAnimation(this.configuration.changingItemTransitionLength);
@@ -382,7 +398,7 @@ class DraggableGrid {
         else {
             this.configuration.changingItemTransition(this._currentCenterItem, 0);
             this.configuration.changingItemTransition(newCurrentItem, 1);
-            this._currentCenterItem = newCurrentItem
+            this._currentCenterItem = newCurrentItem;
             this._moveListToItem(newCurrentItem);
         }
     }
@@ -427,7 +443,7 @@ class DraggableGrid {
     }
 
     _updateVisibilityOfItems(numberOfItemsToSide = 1) {
-        const cellSize = this._cellSize;
+        const cellSize = this.cellSize;
 
         const verticalCount = Math.ceil((Math.floor(this.element.clientHeight / cellSize.height) - 1) / 2);
         const horizontalCount = Math.ceil((Math.floor(this.element.clientWidth / cellSize.width) - 1) / 2);
@@ -449,7 +465,7 @@ class DraggableGrid {
     }
 
     _updateListSize() {
-        const cellSize = this._cellSize;
+        const cellSize = this.cellSize;
         const width = this.isHorizontalOrientation ? this.otherSpan * cellSize.width + cellSize.width : this.span * cellSize.width + cellSize.width;
         const height = this.isHorizontalOrientation ? this.span * cellSize.height + cellSize.height : this.otherSpan * cellSize.height + cellSize.height;
 
@@ -464,7 +480,7 @@ class DraggableGrid {
         this.configuration.changingItemTransition(this._currentCenterItem, 1);
     }
 
-    _updateTransitionenItems(listItem, vectorX, vectorY) {
+    _updateTransitionedItems(listItem, vectorX, vectorY) {
         this._transitionedItems = [];
 
         const listItemIndex = this._listItems.indexOf(listItem);
@@ -528,7 +544,7 @@ class DraggableGrid {
     }
 
     _getItemForListPosition(left, top) {
-        const cellSize = this._cellSize;
+        const cellSize = this.cellSize;
 
         top = top - ((this.element.clientHeight - cellSize.height) / 2);
         left = left - ((this.element.clientWidth - cellSize.width) / 2);
@@ -552,7 +568,7 @@ class DraggableGrid {
     }
 
     _getListPositionForItem(listItem) {
-        const cellSize = this._cellSize;
+        const cellSize = this.cellSize;
         const row = this._getRowOfItem(listItem);
         const column = this._getColumnOfItem(listItem);
 
@@ -665,7 +681,7 @@ class DraggableGrid {
     }
 
     _getToItemSideVectorLength(vectorX, vectorY) {
-        const cellSize = this._cellSize;
+        const cellSize = this.cellSize;
 
         //const height = cellSize.height / 2;
         //const width = cellSize.width / 2;

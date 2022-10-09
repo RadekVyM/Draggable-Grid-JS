@@ -349,6 +349,23 @@
     <div class="center-point"></div>
 
     <script src="./DraggableGrid.js"></script>
+
+    <script>
+        window.addEventListener("load", () => {
+            const draggableGridDivs = document.body.querySelectorAll("div.draggable-grid");
+
+            for (const div of draggableGridDivs) {
+                DraggableGrid.initDraggableGridFor(div);
+            }
+
+            // Just for testing
+            const secondGrid = DraggableGrid.getDraggableGridFor(document.body.querySelectorAll("div.draggable-grid")[1]);
+
+            secondGrid.configuration.changingItemTransition = (li, v) => {
+                li.style.transform = `rotate(${(1 - v) * 30}deg)`;
+            };
+        });
+    </script>
 </body>
 
 </html>

@@ -9,7 +9,7 @@ div.draggable-grid {
     touch-action: none;
 }
 
-div.draggable-grid>ul {
+div.draggable-grid > ul {
     position: absolute;
     list-style: none;
     height: 100%;
@@ -20,8 +20,13 @@ div.draggable-grid>ul {
     box-sizing: border-box;
 }
 
-div.draggable-grid>ul>li {
+div.draggable-grid > ul > li {
     position: absolute;
     display: none;
     box-sizing: border-box;
+    user-select: none;
+    -moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
 }
