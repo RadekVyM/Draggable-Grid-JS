@@ -24,11 +24,11 @@
             justify-content: stretch;
             align-items: stretch;
             overflow: hidden;
-            border-radius: 1em;
+            border-radius: 0.5em;
         }
 
         div.draggable-grid>ul>li {
-            padding: 1em;
+            padding: 0.5em;
         }
 
         div.draggable-grid>ul>li * {
@@ -298,12 +298,10 @@
 
                 const img = li.querySelector("img");
                 const minScale = 0.95;
-                const minOpacity = 0.4;
-                const maxBlur = 0.2;
+                const minOpacity = 0.3;
 
                 li.style.transform = `scale(${minScale + ((1 - minScale) * v)})`;
                 li.style.opacity = `${minOpacity + ((1 - minOpacity) * v)}`;
-                img.style.filter = `blur(${maxBlur * (1 - v)}em)`;
                 img.style.transform = `scale(${1.2 - (0.1 * (1 - v))})`;
             };
         });
