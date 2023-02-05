@@ -10,6 +10,7 @@
 
     <style>
         body {
+            background: black;
             padding: 0;
             margin: 0;
             box-sizing: border-box;
@@ -22,17 +23,23 @@
             height: 100%;
             justify-content: stretch;
             align-items: stretch;
+            overflow: hidden;
+            border-radius: 1em;
+        }
+
+        div.draggable-grid>ul>li {
+            padding: 1em;
         }
 
         div.draggable-grid>ul>li * {
             box-sizing: border-box;
         }
 
-        div.draggable-grid>ul>li>div>div {
+        div.draggable-grid>ul>li>div>img {
             position: relative;
             width: 100%;
-            border-radius: 0.5rem;
             box-shadow: 0px 0px 2rem #00000050;
+            object-fit: cover;
         }
 
         div.draggable-grid {
@@ -47,306 +54,213 @@
             top: calc(50vh - 5px);
             left: calc(50vw - 5px);
         }
+
+        .freepik-attribution {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            color: white;
+            margin: 1.5rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-shadow: black 0 0 5px;
+            font-size: 0.9em;
+        }
+
+        .freepik-attribution .freepik-link {
+            color: white;
+        }
+
+        button {
+            position: fixed;
+            height: 3.5em;
+            width: 3.5em;
+            border-radius: 2rem;
+            border-color: transparent;
+            background-color: #00000055;
+            background-repeat: no-repeat;
+            background-position: center;
+            color: white;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #00000088;
+            cursor: pointer;
+        }
+
+        #up {
+            top: 1em;
+            left: calc(50% - 2em);
+            background-image: url(./images/arrow_up.png);
+            background-size: 1.2em 0.6em;
+        }
+
+        #down {
+            bottom: 1em;
+            left: calc(50% - 2em);
+            background-image: url(./images/arrow_down.png);
+            background-position-y: 55%;
+            background-size: 1.2em 0.6em;
+        }
+
+        #left {
+            top: calc(50% - 2em);
+            left: 1em;
+            background-image: url(./images/arrow_left.png);
+            background-position-x: 45%;
+            background-size: 0.6em 1.2em;
+        }
+
+        #right {
+            top: calc(50% - 2em);
+            right: 1em;
+            background-image: url(./images/arrow_right.png);
+            background-size: 0.6em 1.2em;
+        }
     </style>
 </head>
 
 <body>
 
-    <div class="draggable-grid" data-span="5" data-orientation="horizontal" data-cell-size-ratio="3/4"
-        data-max-cell-size="0.5 0.5" draggable="false">
-        <ul>
-            <li>
-                <div>
-                    <div style="background-color: cadetblue;">
-                        <p onclick="console.log('Paragraph was clicked!')">Hello Man!</p>
-                        <button onclick="console.log('Button was clicked!')">Click me!</button>
-                        <a href="#">I am a link</a>
-                    </div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: mediumspringgreen;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: brown;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: crimson;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: darkorange;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: goldenrod;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: lightcoral;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: darkslategray;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: royalblue;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: cadetblue;">
-                    </div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: mediumspringgreen;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: brown;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: crimson;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: darkorange;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: goldenrod;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: lightcoral;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: darkslategray;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: royalblue;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: cadetblue;">
-                    </div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: mediumspringgreen;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: brown;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: crimson;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: darkorange;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: goldenrod;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: lightcoral;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: darkslategray;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: royalblue;"></div>
-                </div>
-            </li>
-        </ul>
-    </div>
-
     <div class="draggable-grid" data-span="4" data-orientation="horizontal" data-cell-size-ratio="3/4"
-        data-max-cell-size="0.8 0.8" draggable="false">
+        data-max-cell-size="0.65 0.7" draggable="false">
         <ul>
             <li>
                 <div>
-                    <div style="background-color: cadetblue;">
-                        <p onclick="console.log('Paragraph was clicked!')">Hello Man!</p>
-                        <button onclick="console.log('Button was clicked!')">Click me!</button>
-                        <a href="#">I am a link</a>
-                    </div>
+                    <img src="images/1.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: mediumspringgreen;"></div>
+                    <img src="images/2.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: brown;"></div>
+                    <img src="images/3.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: crimson;"></div>
+                    <img src="images/4.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: darkorange;"></div>
+                    <img src="images/5.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: goldenrod;"></div>
+                    <img src="images/6.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: lightcoral;"></div>
+                    <img src="images/7.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: darkslategray;"></div>
+                    <img src="images/8.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: royalblue;"></div>
+                    <img src="images/9.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: cadetblue;">
-                    </div>
+                    <img src="images/10.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: mediumspringgreen;"></div>
+                    <img src="images/11.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: brown;"></div>
+                    <img src="images/12.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: crimson;"></div>
+                    <img src="images/13.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: darkorange;"></div>
+                    <img src="images/14.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: goldenrod;"></div>
+                    <img src="images/1.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: lightcoral;"></div>
+                    <img src="images/2.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: darkslategray;"></div>
+                    <img src="images/15.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: royalblue;"></div>
+                    <img src="images/16.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: cadetblue;">
-                    </div>
+                    <img src="images/3.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: mediumspringgreen;"></div>
+                    <img src="images/4.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: brown;"></div>
+                    <img src="images/7.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: crimson;"></div>
+                    <img src="images/8.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: darkorange;"></div>
+                    <img src="images/5.jpg">
                 </div>
             </li>
             <li>
                 <div>
-                    <div style="background-color: goldenrod;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: lightcoral;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: darkslategray;"></div>
-                </div>
-            </li>
-            <li>
-                <div>
-                    <div style="background-color: royalblue;"></div>
+                    <img src="images/6.jpg">
                 </div>
             </li>
         </ul>
     </div>
 
+    <!--
     <div class="center-point"></div>
+    -->
+
+    <button id="left"></button>
+
+    <button id="right"></button>
+
+    <button id="up"></button>
+
+    <button id="down"></button>
+
+    <p class="freepik-attribution">Designed by <a href="https://www.freepik.com/" class="freepik-link">Freepik</a></p>
 
     <script src="./DraggableGrid.js"></script>
 
@@ -359,10 +273,38 @@
             }
 
             // Just for testing
-            const secondGrid = DraggableGrid.getDraggableGridFor(document.body.querySelectorAll("div.draggable-grid")[1]);
+            const gridDiv = document.body.querySelectorAll("div.draggable-grid")[0];
+            const grid = DraggableGrid.getDraggableGridFor(gridDiv);
 
-            secondGrid.configuration.changingItemTransition = (li, v) => {
-                li.style.transform = `rotate(${(1 - v) * 30}deg)`;
+            document.body.querySelector("#up").onclick = () => {
+                grid.goUp(true);
+            };
+
+            document.body.querySelector("#down").onclick = () => {
+                grid.goDown(true);
+            };
+
+            document.body.querySelector("#left").onclick = () => {
+                grid.goLeft(true);
+            };
+
+            document.body.querySelector("#right").onclick = () => {
+                grid.goRight(true);
+            };
+
+            grid.configuration.changingItemTransition = (li, v) => {
+                if (!li)
+                    return;
+
+                const img = li.querySelector("img");
+                const minScale = 0.95;
+                const minOpacity = 0.4;
+                const maxBlur = 0.2;
+
+                li.style.transform = `scale(${minScale + ((1 - minScale) * v)})`;
+                li.style.opacity = `${minOpacity + ((1 - minOpacity) * v)}`;
+                img.style.filter = `blur(${maxBlur * (1 - v)}em)`;
+                img.style.transform = `scale(${1.2 - (0.1 * (1 - v))})`;
             };
         });
     </script>

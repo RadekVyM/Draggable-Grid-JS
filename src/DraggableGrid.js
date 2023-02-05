@@ -128,12 +128,16 @@ class DraggableGrid {
         return this.orientation === DG_ORIENTATION_VERTICAL;
     }
 
+    get currentItem() {
+        return this._currentCenterItem;
+    }
+
     get currentItemIndex() {
-        return this._listItems.indexOf(this._currentCenterItem);
+        return this._getIndexOfItem(this._currentCenterItem);
     }
 
     set currentItemIndex(value) {
-        this._changeCurrentItem(value, false);
+        this._changeCurrentItem(this._listItems[value], false);
     }
 
 
@@ -203,30 +207,59 @@ class DraggableGrid {
     }
 
 
+    goUp(animated = false) {
+        const newItem = this._getTopNeighbor(this._currentCenterItem);
+        if (newItem) {
+            this._updateTransitionedItems(this._currentCenterItem, 0, -1);
+            this._changeCurrentItem(newItem, animated);
+        }
+    }
+
+    goDown(animated = false) {
+        const newItem = this._getBottomNeighbor(this._currentCenterItem);
+        if (newItem) {
+            this._updateTransitionedItems(this._currentCenterItem, 0, 1);
+            this._changeCurrentItem(newItem, animated);
+        }
+    }
+
+    goLeft(animated = false) {
+        const newItem = this._getLeftNeighbor(this._currentCenterItem);
+        if (newItem) {
+            this._updateTransitionedItems(this._currentCenterItem, -1, 0);
+            this._changeCurrentItem(newItem, animated);
+        }
+    }
+
+    goRight(animated = false) {
+        const newItem = this._getRightNeighbor(this._currentCenterItem);
+        if (newItem) {
+            this._updateTransitionedItems(this._currentCenterItem, 1, 0);
+            this._changeCurrentItem(newItem, animated);
+        }
+    }
+
+    _getIndexOfItem(listItem) {
+        return this._listItems.indexOf(listItem);
+    }
+
     _onKeyDown(e) {
-        console.log(e.code);
-
-        let newItem = null;
-
         switch (e.code) {
             case "ArrowUp":
-                newItem = this._getTopNeighbor(this._currentCenterItem);
+                this.goUp();
                 break;
             case "ArrowDown":
-                newItem = this._getBottomNeighbor(this._currentCenterItem);
+                this.goDown();
                 break;
             case "ArrowLeft":
-                newItem = this._getLeftNeighbor(this._currentCenterItem);
+                this.goLeft();
                 break;
             case "ArrowRight":
-                newItem = this._getRightNeighbor(this._currentCenterItem);
+                this.goRight();
                 break;
             default:
                 return;
         }
-
-        if (newItem)
-            this._changeCurrentItem(newItem, false);
 
         e.preventDefault();
     }
@@ -370,7 +403,8 @@ class DraggableGrid {
             const subAnimations = [];
 
             for (const item of this._transitionedItems) {
-                const currentVectorScale = this._getTransitionValueFromPositions(currentPosition, this._getListPositionForItem(item));
+                const position = this._getListPositionForItem(item);
+                const currentVectorScale = this._getTransitionValueFromPositions(currentPosition, position);
 
                 if (item !== newCurrentItem) {
                     subAnimations.push(v => {
@@ -388,11 +422,14 @@ class DraggableGrid {
             this._transitionAnimation = new DGAnimation(0, 1, v => {
                 for (const subAnimation of subAnimations)
                     subAnimation(v);
+            }, () => {
+                if (this._transitionAnimation)
+                    this._transitionAnimation.stopAnimation();
+                this._transitionAnimation = null;
             });
 
             this._currentCenterItem = newCurrentItem;
-            this._animateListToItem(newCurrentItem).then(() => {
-            });
+            this._animateListToItem(newCurrentItem);
             this._transitionAnimation.startAnimation(this.configuration.changingItemTransitionLength);
         }
         else {
@@ -425,8 +462,6 @@ class DraggableGrid {
             this._moveListToItem(listItem);
         });
         this._moveListToItemAnimation.startAnimation(animationLength, this.configuration.changingItemTransitionEasing);
-
-        return new Promise(resolve => setTimeout(resolve, animationLength + 30))
     }
 
     _moveListToPosition(left, top) {
@@ -483,7 +518,7 @@ class DraggableGrid {
     _updateTransitionedItems(listItem, vectorX, vectorY) {
         this._transitionedItems = [];
 
-        const listItemIndex = this._listItems.indexOf(listItem);
+        const listItemIndex = this._getIndexOfItem(listItem);
         const scaledItemsIndexes = [];
 
         scaledItemsIndexes.push(listItemIndex);
@@ -538,9 +573,10 @@ class DraggableGrid {
             return;
 
         const minScale = 0.9;
+        const minOpacity = 0.5;
 
         listItem.style.transform = `scale(${minScale + ((1 - minScale) * value)})`;
-        listItem.style.opacity = `${0.5 + ((1 - 0.5) * value)}`;
+        listItem.style.opacity = `${minOpacity + ((1 - minOpacity) * value)}`;
     }
 
     _getItemForListPosition(left, top) {
@@ -579,25 +615,25 @@ class DraggableGrid {
     }
 
     _getTopNeighbor(listItem) {
-        const itemIndex = this._listItems.indexOf(listItem);
+        const itemIndex = this._getIndexOfItem(listItem);
         const neighborIndex = this._getTopNeighborIndex(itemIndex);
         return neighborIndex >= 0 && neighborIndex < this._listItems.length ? this._listItems[neighborIndex] : null;
     }
 
     _getBottomNeighbor(listItem) {
-        const itemIndex = this._listItems.indexOf(listItem);
+        const itemIndex = this._getIndexOfItem(listItem);
         const neighborIndex = this._getBottomNeighborIndex(itemIndex);
         return neighborIndex >= 0 && neighborIndex < this._listItems.length ? this._listItems[neighborIndex] : null;
     }
 
     _getLeftNeighbor(listItem) {
-        const itemIndex = this._listItems.indexOf(listItem);
+        const itemIndex = this._getIndexOfItem(listItem);
         const neighborIndex = this._getLeftNeighborIndex(itemIndex);
         return neighborIndex >= 0 && neighborIndex < this._listItems.length ? this._listItems[neighborIndex] : null;
     }
 
     _getRightNeighbor(listItem) {
-        const itemIndex = this._listItems.indexOf(listItem);
+        const itemIndex = this._getIndexOfItem(listItem);
         const neighborIndex = this._getRightNeighborIndex(itemIndex);
         return neighborIndex >= 0 && neighborIndex < this._listItems.length ? this._listItems[neighborIndex] : null;
     }
@@ -619,7 +655,7 @@ class DraggableGrid {
     }
 
     _getColumnOfItem(listItem) {
-        const itemIndex = this._listItems.indexOf(listItem);
+        const itemIndex = this._getIndexOfItem(listItem);
 
         if (itemIndex === -1)
             return -1;
@@ -628,7 +664,7 @@ class DraggableGrid {
     }
 
     _getRowOfItem(listItem) {
-        const itemIndex = this._listItems.indexOf(listItem);
+        const itemIndex = this._getIndexOfItem(listItem);
 
         if (itemIndex === -1)
             return -1;
@@ -673,6 +709,7 @@ class DraggableGrid {
         const vectorY = currentPosition.top - targetPosition.top;
         const vectorLength = this._getVectorLength(vectorX, vectorY);
         const sideVectorLength = this._getToItemSideVectorLength(vectorX, vectorY);
+
         return this._getTransitionValueFromVectors(vectorLength, sideVectorLength);
     }
 
@@ -695,8 +732,15 @@ class DraggableGrid {
     }
 
     _getScaledVector(vectorX, vectorY, maxAbsX, maxAbsY) {
-        const normalizedVectorY = vectorY / Math.abs(vectorX / maxAbsX);
+        if (vectorX == 0) {
+            return { x: 0, y: maxAbsY * (vectorY < 0 ? -1 : 1) };
+        }
 
+        if (vectorY == 0) {
+            return { x: maxAbsX * (vectorX < 0 ? -1 : 1), y: 0 };
+        }
+
+        const normalizedVectorY = vectorY / Math.abs(vectorX / maxAbsX);
         const verticalVectorIntersection = Math.abs(normalizedVectorY) > maxAbsY;
 
         let scaledVectorX;
