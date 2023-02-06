@@ -176,6 +176,7 @@ class DraggableGrid {
         this.configuration = this._createDefaultConfiguration();
 
         this.element.setAttribute("tabindex", 0);
+        this.element.setAttribute("draggable", false);
 
         this._updateListItems();
         this._arrangeItems();
@@ -246,16 +247,16 @@ class DraggableGrid {
     _onKeyDown(e) {
         switch (e.code) {
             case "ArrowUp":
-                this.goUp();
+                this.goUp(true);
                 break;
             case "ArrowDown":
-                this.goDown();
+                this.goDown(true);
                 break;
             case "ArrowLeft":
-                this.goLeft();
+                this.goLeft(true);
                 break;
             case "ArrowRight":
-                this.goRight();
+                this.goRight(true);
                 break;
             default:
                 return;

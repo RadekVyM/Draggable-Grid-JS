@@ -1,3 +1,6 @@
+<!--
+    Sample of this control
+-->
 <!DOCTYPE html>
 <html lang="cs">
 
@@ -5,8 +8,9 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles needed for the control to function properly -->
     <link rel="stylesheet" href="./src/draggableGrid.css">
-    <title>Document</title>
+    <title>Draggable Grid</title>
 
     <style>
         body {
@@ -122,8 +126,16 @@
 
 <body>
 
-    <div class="draggable-grid" data-span="4" data-orientation="horizontal" data-cell-size-ratio="3/4"
-        data-max-cell-size="0.65 0.7" draggable="false">
+    <!--
+        Unordered list has to be wrapped in a div with "draggable-grid" class
+        Parameters of the control can be set via data attributes:
+        - data-orientation - horizontal or vertical orientation
+        - data-span - number of rows or columns (depends on orientation)
+        - data-cell-size-ratio - width to height ratio of the cell size
+        - data-max-cell-size - how much screen space a cell can occupy (width height)
+    -->
+    <div class="draggable-grid" data-orientation="horizontal" data-span="4" data-cell-size-ratio="3/4"
+        data-max-cell-size="0.65 0.7">
         <ul>
             <li>
                 <div>
@@ -260,7 +272,7 @@
 
     <button id="down"></button>
 
-    <p class="freepik-attribution">Designed by <a href="https://www.freepik.com/" class="freepik-link">Freepik</a></p>
+    <p class="freepik-attribution">Images by <a href="https://www.freepik.com/" class="freepik-link">Freepik</a></p>
 
     <script src="./src/DraggableGrid.js"></script>
 
@@ -268,6 +280,7 @@
         window.addEventListener("load", () => {
             const draggableGridDivs = document.body.querySelectorAll("div.draggable-grid");
 
+            // Initialization of the control
             for (const div of draggableGridDivs) {
                 DraggableGrid.initDraggableGridFor(div);
             }
@@ -276,6 +289,7 @@
             const gridDiv = document.body.querySelectorAll("div.draggable-grid")[0];
             const grid = DraggableGrid.getDraggableGridFor(gridDiv);
 
+            // Use of navigation methods
             document.body.querySelector("#up").onclick = () => {
                 grid.goUp(true);
             };
@@ -292,7 +306,8 @@
                 grid.goRight(true);
             };
 
-            grid.configuration.changingItemTransition = (li, v) => {
+            // Custom transition between items
+            grid.configuration.changingItemTransition = (li, progress) => {
                 if (!li)
                     return;
 
@@ -300,9 +315,9 @@
                 const minScale = 0.95;
                 const minOpacity = 0.3;
 
-                li.style.transform = `scale(${minScale + ((1 - minScale) * v)})`;
-                li.style.opacity = `${minOpacity + ((1 - minOpacity) * v)}`;
-                img.style.transform = `scale(${1.2 - (0.1 * (1 - v))})`;
+                li.style.transform = `scale(${minScale + ((1 - minScale) * progress)})`;
+                li.style.opacity = `${minOpacity + ((1 - minOpacity) * progress)}`;
+                img.style.transform = `scale(${1.2 - (0.1 * (1 - progress))})`;
             };
         });
     </script>
