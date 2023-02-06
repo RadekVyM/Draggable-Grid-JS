@@ -22,7 +22,7 @@ Wrap an unordered list in a `div` with `draggable-grid` class:
     data-orientation="horizontal"
     data-span="4"
     data-cell-size-ratio="3/4"
-    data-max-cell-size="0.65 0.7" draggable="false">
+    data-max-cell-size="0.65 0.7">
     <ul>
         ...
     </ul>
